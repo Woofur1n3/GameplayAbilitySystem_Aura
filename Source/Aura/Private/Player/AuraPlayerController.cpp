@@ -4,12 +4,59 @@
 #include "Player/AuraPlayerController.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
+#include "UObject/FastReferenceCollector.h"
 
 AAuraPlayerController::AAuraPlayerController()
 {
 	bReplicates = true;
 }
 
+void AAuraPlayerController::PlayerTick(float DeltaTime)
+{
+	Super::PlayerTick(DeltaTime);
+	CursorTrace();
+}
+
+void AAuraPlayerController::CursorTrace()
+{
+	FHitResult CursorHit;
+	GetHitResultUnderCursor(ECC_Visibility,false,CursorHit);
+	if(!CursorHit.bBlockingHit) return; //return if nothing is hit.
+
+	LastActor = ThisActor;
+	ThisActor =  Cast<IEnemyInterface>(CursorHit.GetActor());
+
+	if(LastActor == nullptr)
+	{
+		if(ThisActor != nullptr)
+		{
+			ThisActor->HighlightActor();
+		}
+		else
+		{
+			//Both Null do nothing.
+		}
+	}
+	else
+	{
+		if(ThisActor == nullptr)
+		{
+			LastActor->UnHighlightActor();
+		}
+		else
+		{
+			if(LastActor != ThisActor)
+			{
+				LastActor->UnHighlightActor();
+				ThisActor->HighlightActor();
+			}
+			else
+			{
+				//Same Actor, do UE::GC::ELoot::Nothing.
+			}
+		}
+	}
+}
 void AAuraPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
